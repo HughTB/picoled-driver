@@ -7,4 +7,10 @@ int sys_get_cpu_usage();
 /// \brief Obtains the current memory usage from /proc/meminfo as a percentage
 int sys_get_mem_usage();
 
+/// \brief Obtains the current CPU temperature from /sys/class/thermal/thermal_zone*
+int sys_get_cpu_temp(const char* thermal_sensor);
+
+/// \brief Find the CPU temperature sensor for use with sys_get_cpu_temp
+char* sys_find_cpu_sensor();
+
 #endif //PICOLED_DRIVER_LINUX_SYSTEM_INFO_HXX
