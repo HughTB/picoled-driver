@@ -5,18 +5,24 @@
 #include "serial.hxx"
 #include "system_info.hxx"
 
+#define WRITE_BUFFER_SIZE 256
+#define READ_BUFFER_SIZE 256
+
 int main() {
-    int port = serial_open_port("/dev/ttyACM0", B115200, 5);
+    int port = serial_find_picoled("/dev/ttyACM", B115200);
 
-    serial_send_message(port, "cpu:52,mem:70");
+    if (port < 0) {
+        std::cout << "ERROR: Failed to find PicOLED device... Exiting" << std::endl;
+        return -1;
+    }
 
-    char* send_buffer = (char*)calloc(128, sizeof(char));
+    char* write_buffer = (char*)calloc(WRITE_BUFFER_SIZE, sizeof(char));
+    char* read_buffer = (char*)calloc(READ_BUFFER_SIZE, sizeof(char));
 
     while (true) {
-    //for (int i = 0; i < 20; i++) {
-        snprintf(send_buffer, 128, "cpu:%i,mem:%i", sys_get_cpu_usage(), sys_get_mem_usage());
+        snprintf(write_buffer, 128, "cpu:%i,mem:%i", sys_get_cpu_usage(), sys_get_mem_usage());
 
-        serial_send_message(port, send_buffer);
+        serial_send_message(port, write_buffer);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
