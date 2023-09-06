@@ -1,8 +1,8 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
-#include <algorithm>
 #include <iostream>
+#include <vector>
 
 #include "system_info.hxx"
 
@@ -92,7 +92,7 @@ int sys_get_mem_usage() {
     return (int)mem_percent; // Since this is a percentage, it should always be <=100, so int conversion doesn't matter
 }
 
-int sys_get_cpu_temp(const char* thermal_sensor) {
+int sys_get_temp(const char* thermal_sensor) {
     if (thermal_sensor == nullptr)
         return 0;
 
@@ -105,25 +105,15 @@ int sys_get_cpu_temp(const char* thermal_sensor) {
 
     read_buffer[read_buffer_size - 1] = '\0';
 
-    // Since the file just contains the temperature, we can just parse it, but divide by 1000
+    // Since the file just contains the temperature, we can just parse it, but divide by 1000 as it's in milli-degrees
     int temp = (int)(strtol(read_buffer, nullptr, 10) / 1000);
 
     free(read_buffer);
 
-    return std::clamp(temp, 0, 255);
+    return temp;
 }
 
-const char* cpu_hwmon_names[] = {
-        "coretemp\n",
-        "k10temp\n",
-};
-
-const char* cpu_sensor_names[] = {
-        "Package id 0\n",
-        "Tccd0\n",
-};
-
-char* sys_find_cpu_sensor() {
+char* sys_find_thermal_sensor(const std::vector<std::string> &hwmon_names, const std::vector<std::string> &sensor_names) {
     char* cpu_sensor = (char*)calloc(256, sizeof(char));
     char* read_buffer = (char*)calloc(64, sizeof(char));
     char* hwmon_path = (char*)calloc(256, sizeof(char));
@@ -149,8 +139,8 @@ char* sys_find_cpu_sensor() {
         read_buffer[read_chars] = '\0';
 
         // Check if the hwmon name matches any in the list of possible names
-        for (auto name : cpu_hwmon_names) {
-            if (!strcmp(read_buffer, name)) {
+        for (const auto &name : hwmon_names) {
+            if (!strcmp(read_buffer, name.c_str())) {
                 hwmon_found = true;
                 snprintf(hwmon_path, 256, "/sys/class/hwmon/hwmon%i", i);
                 break;
@@ -188,8 +178,8 @@ char* sys_find_cpu_sensor() {
         read_buffer[read_chars] = '\0';
 
         // Check if the sensor name matches any in the list of possible names
-        for (auto name : cpu_sensor_names) {
-            if (!strcmp(read_buffer, name)) {
+        for (const auto &name : sensor_names) {
+            if (!strcmp(read_buffer, name.c_str())) {
                 sensor_found = true;
                 snprintf(cpu_sensor, 256, "%s/temp%i_input", hwmon_path, i);
                 break;
@@ -216,4 +206,20 @@ char* sys_find_cpu_sensor() {
 
     // We found the sensor!
     return cpu_sensor;
+}
+
+char* sys_find_cpu_sensor() {
+    // The name of the device as in /sys/class/hwmon/hwmon[x]/name
+    std::vector<std::string> cpu_hwmon_names = {
+            "coretemp\n", // Most Intel CPUs
+            "k10temp\n", // AMD Zen 3 CPUs
+    };
+
+// The name of the sensor as in /sys/class/hwmon/hwmon[x]/temp[y]_label
+    std::vector<std::string> cpu_sensor_names = {
+            "Package id 0\n", // Most Intel CPUs
+            "Tccd0\n", // AMD Zen 3 single CCD CPUs
+    };
+
+    return sys_find_thermal_sensor(cpu_hwmon_names, cpu_sensor_names);
 }

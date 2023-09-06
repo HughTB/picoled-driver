@@ -11,7 +11,6 @@
 int main() {
     std::cout << "INFO: Attempting to find CPU temperature sensor..." << std::endl;
     char* cpu_sensor = sys_find_cpu_sensor();
-    // char* cpu_sensor = "/sys/class/hwmon/hwmon6/temp1_input";
 
     if (cpu_sensor == nullptr) {
         std::cout << "WARN: Failed to find CPU temperature sensor. The temperature display will not function" << std::endl;
@@ -22,7 +21,7 @@ int main() {
     int port = serial_find_picoled("/dev/ttyACM", B115200);
 
     if (port < 0) {
-        std::cout << "ERROR: Failed to find PicOLED device... Exiting" << std::endl;
+        std::cerr << "ERROR: Failed to find PicOLED device... Exiting" << std::endl;
         return -1;
     }
 
@@ -31,7 +30,7 @@ int main() {
 
     while (true) {
         snprintf(write_buffer, 128, "cpu:%i,mem:%i,cpu_temp:%i,gpu_temp:%i",
-                 sys_get_cpu_usage(), sys_get_mem_usage(), sys_get_cpu_temp(cpu_sensor), 0);
+                 sys_get_cpu_usage(), sys_get_mem_usage(), sys_get_temp(cpu_sensor), 0);
 
         serial_send_message(port, write_buffer);
 
