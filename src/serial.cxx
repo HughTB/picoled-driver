@@ -91,7 +91,7 @@ int serial_send_message(int serial_port, const char* message) {
 }
 
 long serial_read_message(int serial_port, char* read_buffer, size_t read_buffer_len) {
-    long read_chars = 0;
+    long read_chars;
 
     read_chars = read(serial_port, read_buffer, read_buffer_len);
 

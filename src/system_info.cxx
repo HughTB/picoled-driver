@@ -113,40 +113,107 @@ int sys_get_cpu_temp(const char* thermal_sensor) {
     return std::clamp(temp, 0, 255);
 }
 
+const char* cpu_hwmon_names[] = {
+        "coretemp\n",
+        "k10temp\n",
+};
+
+const char* cpu_sensor_names[] = {
+        "Package id 0\n",
+        "Tccd0\n",
+};
+
 char* sys_find_cpu_sensor() {
     char* cpu_sensor = (char*)calloc(256, sizeof(char));
     char* read_buffer = (char*)calloc(64, sizeof(char));
+    char* hwmon_path = (char*)calloc(256, sizeof(char));
 
-    size_t read_chars = 0;
+    size_t read_chars;
+    bool hwmon_found = false;
+    bool sensor_found = false;
 
-    // Loop through all 100 possible thermal sensors
+    // Loop through all possible hwmon devices, checking for valid ones
     for (int i = 0; i < 100; i++) {
-        snprintf(cpu_sensor, 256, "/sys/class/thermal/thermal_zone%i/type", i);
+        snprintf(hwmon_path, 256, "/sys/class/hwmon/hwmon%i/name", i);
 
-        FILE* file = fopen(cpu_sensor, "r");
+        // Open the name file for each hwmon device and check if it's a CPU of some sort
+        FILE* file = fopen(hwmon_path, "r");
 
-        // If file failed to open, skip it
+        // If the file couldn't be opened, we've already checked all the devices
         if (file == nullptr)
-            continue;
+            break;
 
         read_chars = fread(read_buffer, sizeof(char), 64, file);
         fclose(file);
 
         read_buffer[read_chars] = '\0';
 
-        // If it matches the type "x86_pkg_temp" then it is the CPU sensor
-        if (!strcmp(read_buffer, "x86_pkg_temp\n")) {
-            free(read_buffer);
-            snprintf(cpu_sensor, 256, "/sys/class/thermal/thermal_zone%i/temp", i);
-
-            return cpu_sensor;
+        // Check if the hwmon name matches any in the list of possible names
+        for (auto name : cpu_hwmon_names) {
+            if (!strcmp(read_buffer, name)) {
+                hwmon_found = true;
+                snprintf(hwmon_path, 256, "/sys/class/hwmon/hwmon%i", i);
+                break;
+            }
         }
+
+        if (hwmon_found)
+            break;
     }
 
-    // Don't leak memory!
-    free(cpu_sensor);
+    if (!hwmon_found) {
+        std::cerr << "ERROR: Failed to find CPU hwmon device!" << std::endl;
+
+        free(cpu_sensor);
+        free(hwmon_path);
+        free(read_buffer);
+
+        return nullptr;
+    }
+
+    // Loop through all possible temperature sensors
+    for (int i = 1; i < 100; i++) {
+        snprintf(cpu_sensor, 256, "%s/temp%i_label", hwmon_path, i);
+
+        // Open the name file for each hwmon device and check if it's a CPU of some sort
+        FILE* file = fopen(cpu_sensor, "r");
+
+        // If the file couldn't be opened, we've already checked all the sensors
+        if (file == nullptr)
+            break;
+
+        read_chars = fread(read_buffer, sizeof(char), 64, file);
+        fclose(file);
+
+        read_buffer[read_chars] = '\0';
+
+        // Check if the sensor name matches any in the list of possible names
+        for (auto name : cpu_sensor_names) {
+            if (!strcmp(read_buffer, name)) {
+                sensor_found = true;
+                snprintf(cpu_sensor, 256, "%s/temp%i_input", hwmon_path, i);
+                break;
+            }
+        }
+
+        if (sensor_found)
+            break;
+    }
+
+    // We found the CPU hwmon device, but not the package sensor
+    if (!sensor_found) {
+        std::cerr << "ERROR: Failed to find CPU package temperature sensor!" << std::endl;
+
+        free(cpu_sensor);
+        free(hwmon_path);
+        free(read_buffer);
+
+        return nullptr;
+    }
+
+    free(hwmon_path);
     free(read_buffer);
 
-    // We didn't find anything
-    return nullptr;
+    // We found the sensor!
+    return cpu_sensor;
 }
