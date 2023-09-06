@@ -215,7 +215,7 @@ char* sys_find_cpu_sensor() {
             "k10temp\n", // AMD Zen 3 CPUs
     };
 
-// The name of the sensor as in /sys/class/hwmon/hwmon[x]/temp[y]_label
+    // The name of the sensor as in /sys/class/hwmon/hwmon[x]/temp[y]_label
     std::vector<std::string> cpu_sensor_names = {
             "Package id 0\n", // Most Intel CPUs
             "Tccd0\n", // AMD Zen 3 single CCD CPUs

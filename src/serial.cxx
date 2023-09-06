@@ -76,18 +76,23 @@ int serial_find_picoled(const char* port_path, speed_t baud) {
     return -1;
 }
 
-int serial_send_message(int serial_port, const char* message) {
+long serial_send_message(int serial_port, const char* message) {
     char* formatted_message = (char*)calloc(strlen(message) + 2, sizeof(char));
     snprintf(formatted_message, strlen(message) + 2, "%s\n", message);
 
-    if (write(serial_port, formatted_message, strlen(formatted_message)) < 0) {
+    long chars_written = write(serial_port, formatted_message, strlen(formatted_message));
+
+    if (chars_written < 0) {
         std::cout << "WARN: Failed to send message on serial port " << serial_port << ": " << strerror(errno) << std::endl;
         return -1;
     }
 
+// If debug target, write all messages to stdout
+#ifndef NDEBUG
     std::cout << "INFO: Sent message: " << message << std::endl;
+#endif
 
-    return 0;
+    return chars_written;
 }
 
 long serial_read_message(int serial_port, char* read_buffer, size_t read_buffer_len) {

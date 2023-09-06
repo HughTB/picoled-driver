@@ -14,7 +14,8 @@ int serial_find_picoled(const char* port_path, speed_t baud);
 /// \brief Send a string over the serial port specified
 /// \param serial_port The serial port, as obtained using serial_open_port
 /// \param message The message to send over the serial port
-int serial_send_message(int serial_port, const char* message);
+/// \returns -1 - Failure\n > 0 - Number of bytes written
+long serial_send_message(int serial_port, const char* message);
 
 /// \brief Read a message from the serial port specified
 /// \param serial_port The serial port, as obtained using serial_open_port
