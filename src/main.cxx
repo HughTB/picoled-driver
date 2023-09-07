@@ -39,8 +39,6 @@ int main() {
         return -1;
     }
 
-    std::cout << "INFO: Found PicOLED device" << std::endl;
-
     char* write_buffer = (char*)calloc(WRITE_BUFFER_SIZE, sizeof(char));
     char* read_buffer = (char*)calloc(READ_BUFFER_SIZE, sizeof(char));
 
@@ -52,6 +50,8 @@ int main() {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
+
+    close(port);
 
     // Make sure to free memory before terminating
     free(write_buffer);

@@ -39,6 +39,7 @@ int sys_get_cpu_usage() {
     long delta_total = total - previous_cpu_total;
     long delta_idle = idle - previous_cpu_idle;
 
+    // Not entirely sure about the numbers here but it tends to agree with htop
     long cpu_percent = (1000 * (delta_total - delta_idle) / (delta_total + 5)) / 10;
 
     previous_cpu_total = total;

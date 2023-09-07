@@ -65,8 +65,12 @@ int serial_find_picoled(const char* port_path, speed_t baud) {
             serial_send_message(port, "ident:0,");
 
             if (serial_read_message(port, read_buffer, 256) > 0) {
-                if (!strcmp("miaow", strtok(read_buffer, "\n")))
+                if (!strcmp("miaow", strtok(read_buffer, " "))) {
+                    std::cout << "INFO: Found PicOLED device \"" << strtok(strtok(nullptr, " "), "\n") << "\" on port " << port_buffer << std::endl;
                     return port;
+                } else {
+                    std::cout << "INFO: Device found on port " << port_buffer << " but it was not a PicOLED" << std::endl;
+                }
             }
         } else {
             std::cout << "WARN: Failed to connect to " << port_buffer << std::endl;
@@ -89,7 +93,7 @@ long serial_send_message(int serial_port, const char* message) {
 
 // If debug target, write all messages to stdout
 #ifndef NDEBUG
-    std::cout << "INFO: Sent message: " << message << std::endl;
+    std::cout << "INFO: Sent message \"" << message << "\"" << std::endl;
 #endif
 
     return chars_written;
