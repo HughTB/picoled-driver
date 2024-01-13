@@ -66,10 +66,11 @@ int serial_find_picoled(const char* port_path, speed_t baud) {
 
             if (serial_read_message(port, read_buffer, 256) > 0) {
                 if (!strcmp("miaow", strtok(read_buffer, " "))) {
-                    std::cout << "INFO: Found PicOLED device \"" << strtok(strtok(nullptr, " "), "\n") << "\" on port " << port_buffer << std::endl;
+                    std::cout << "INFO: Found picOLED device \"" << strtok(strtok(nullptr, " "), "\n") << "\" on port " << port_buffer << std::endl;
                     return port;
                 } else {
-                    std::cout << "INFO: Device found on port " << port_buffer << " but it was not a PicOLED" << std::endl;
+                    std::cout << "INFO: Device found on port " << port_buffer << " but it was not a picOLED device" << std::endl;
+                    close(port);
                 }
             }
         } else {

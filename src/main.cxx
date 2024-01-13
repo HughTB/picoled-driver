@@ -31,12 +31,17 @@ int main() {
 
     std::cout << "INFO: Found CPU package sensor at \"" << cpu_sensor << "\"" << std::endl;
 
-    std::cout << "INFO: Attempting to find connected PicOLED device..." << std::endl;
-    int port = serial_find_picoled("/dev/ttyACM", B115200);
+    std::cout << "INFO: Attempting to find connected picOLED device..." << std::endl;
 
-    if (port < 0) {
-        std::cerr << "ERROR: Failed to find PicOLED device... Exiting" << std::endl;
-        return -1;
+    int port = -1;
+
+    while (port < 0 && !stop) {
+        port = serial_find_picoled("/dev/ttyACM", B115200);
+
+        if (port < 0) {
+            std::cout << "WARN: Unable to find picOLED device... Backing off for 15 seconds before retrying" << std::endl;
+            std::this_thread::sleep_for(std::chrono::seconds(15));
+        }
     }
 
     char* write_buffer = (char*)calloc(WRITE_BUFFER_SIZE, sizeof(char));
